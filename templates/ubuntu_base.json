@@ -1,0 +1,178 @@
+{
+  "variables": {
+    "vmname": "{{env `vmname`}}",
+    "cpu": "{{env `cpu`}}",
+    "memory": "{{env `memory`}}",
+    "disk": "{{env `disk`}}",
+    "iso_url": "{{env `iso_url`}}",
+    "iso_checksum": "{{env `iso_checksum`}}",
+    "iso_checksum_type": "{{env `iso_checksum_type`}}",
+    "ssh_username": "{{env `ssh_username`}}",
+    "ssh_password": "{{env `ssh_password`}}",
+		"vcenter_host": "{{env `vcenter_host`}}",
+		"vcenter_user": "{{env `vcenter_user`}}",
+    "vcenter_pass": "{{env `vcenter_pass`}}",
+    "vcenter_datacenter": "{{env `vcenter_datacenter`}}",
+    "esx_host": "{{env `esx_host`}}",
+    "esx_user": "{{env `esx_user`}}",
+    "esx_password": "{{env `esx_password`}}",
+    "esx_datacenter": "{{env `esx_datacenter`}}",
+		"vsphere_datastore": "{{env `vsphere_datastore`}}",
+    "vsphere_network": "{{env `vsphere_network`}}",
+    "vsphere_output_directory": "{{env `vsphere_output_directory`}}//{{env `vmname`}}"
+  },
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `ssh_username`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/ubuntu/setup_all.sh",
+      "environment_vars": [
+        "ssh_username={{user `ssh_username`}}"
+      ]
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `ssh_username`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/ubuntu/setup_vmware.sh",
+      "only": ["vmware-iso"]
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `ssh_username`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/ubuntu/setup_vbox.sh",
+      "only": ["virtualbox-iso"]
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `ssh_username`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/ubuntu/cleanup_all.sh"
+    }
+  ],
+  "builders": [
+        {
+      "type": "vmware-iso",
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_timeout": "15m",
+      "shutdown_command": "echo {{user `ssh_username`}}|sudo -S shutdown -P now",
+      "boot_command": [
+        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "/install/vmlinuz<wait>",
+        " auto<wait>",
+        " console-setup/ask_detect=false<wait>",
+        " console-setup/layoutcode=us<wait>",
+        " console-setup/modelcode=pc105<wait>",
+        " debconf/frontend=noninteractive<wait>",
+        " debian-installer=en_US<wait>",
+        " fb=false<wait>",
+        " initrd=/install/initrd.gz<wait>",
+        " kbd-chooser/method=us<wait>",
+        " keyboard-configuration/layout=USA<wait>",
+        " keyboard-configuration/variant=USA<wait>",
+        " locale=en_US<wait>",
+        " netcfg/get_domain=vm<wait>",
+        " netcfg/get_hostname={{user `vmname`}}<wait>",
+        " grub-installer/bootdev=/dev/sda<wait>",
+        " noapic<wait>",
+        " preseed/url=http://{{.HTTPIP}}:{{.HTTPPort}}/ubuntu_preseed.cfg",
+        " -- <wait>",
+        "<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": "{{user `disk`}}",
+      "guest_os_type": "ubuntu-64",
+      "headless": false,
+      "http_directory": "boot",
+      "keep_registered": true,
+      "vm_name": "{{user `vmname`}}",
+      "vnc_disable_password": "true",
+      "output_directory": "{{user `vsphere_output_directory`}}",
+      "remote_type": "esx5",
+      "remote_username": "{{user `esx_username`}}",
+      "remote_password": "{{user `esx_password`}}",
+      "remote_host": "{{user `esx_host`}}",
+      "vmx_data": {
+        "numvcpus": "{{user `cpu`}}",
+        "memsize": "{{user `memory`}}",
+        "ethernet0.networkName": "VM Network",
+        "paevm": "TRUE"
+      }
+    },
+    {
+      "type": "virtualbox-iso",
+      "boot_command": [
+        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "/install/vmlinuz<wait>",
+        " auto<wait>",
+        " console-setup/ask_detect=false<wait>",
+        " console-setup/layoutcode=us<wait>",
+        " console-setup/modelcode=pc105<wait>",
+        " debconf/frontend=noninteractive<wait>",
+        " debian-installer=en_US<wait>",
+        " fb=false<wait>",
+        " initrd=/install/initrd.gz<wait>",
+        " kbd-chooser/method=us<wait>",
+        " keyboard-configuration/layout=USA<wait>",
+        " keyboard-configuration/variant=USA<wait>",
+        " locale=en_US<wait>",
+        " netcfg/get_domain=vm<wait>",
+        " netcfg/get_hostname={{user `vmname`}}<wait>",
+        " grub-installer/bootdev=/dev/sda<wait>",
+        " noapic<wait>",
+        " preseed/url=http://{{.HTTPIP}}:{{.HTTPPort}}/ubuntu_preseed.cfg",
+        " -- <wait>",
+        "<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": "{{user `disk`}}",
+      "guest_os_type": "Ubuntu_64",
+      "headless": true,
+      "http_directory": "boot",
+      "iso_urls": [
+        "iso/{{user `vmname`}}.iso",
+        "{{user `iso_url`}}"
+      ],
+      "iso_checksum_type": "sha256",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "shutdown_command": "echo {{user `ssh_username`}}|sudo -S shutdown -P now",
+      "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+      "virtualbox_version_file": ".vbox_version",
+      "vm_name": "{{user `vmname`}}",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "{{user `memory`}}"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "{{user `cpu`}}"
+        ]
+      ]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "output": "builds/{{.Provider}}/{{user `vmname`}}.box",
+      "only": ["virtualbox-iso"]
+    }
+  ]
+}

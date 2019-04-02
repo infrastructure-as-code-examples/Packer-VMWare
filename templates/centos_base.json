@@ -1,0 +1,76 @@
+{
+  "variables": {
+    "vmname": "{{env `vmname`}}",
+    "numvcpus": "{{env `numvcpus`}}",
+    "memsize": "{{env `memsize`}}",
+    "disk_size": "{{env `disk_size`}}",
+    "iso_url": "{{env `iso_url`}}",
+    "iso_checksum": "{{env `iso_checksum`}}",
+    "iso_checksum_type": "{{env `iso_checksum_type`}}",
+    "ssh_username": "{{env `ssh_username`}}",
+    "ssh_password": "{{env `ssh_password`}}",
+    "remote_host": "{{env `remote_host`}}",
+    "remote_username": "{{env `remote_username`}}",
+    "remote_password": "{{env `remote_password`}}",
+    "networkName": "{{env `networkName`}}",
+    "vsphere_datastore": "{{env `vsphere_datastore`}}",
+    "output_directory": "{{env `output_directory_base`}}/{{env `vmname`}}"
+  },
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `ssh_username`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/centos/setup_all.sh",
+      "environment_vars": [
+        "ssh_username={{user `ssh_username`}}"
+      ]
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `ssh_username`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/centos/setup_vmware.sh",
+      "only": ["vmware-iso"]
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `ssh_username`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/centos/cleanup_all.sh"
+    }
+  ],
+  "builders": [
+    {
+      "type": "vmware-iso",
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_wait_timeout": "15m",
+      "shutdown_command": "echo {{user `ssh_username`}}|sudo -S /sbin/halt -h -p",
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/centos_preseed.cfg<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": "{{user `disk_size`}}",
+      "guest_os_type": "centos-64",
+      "headless": true,
+      "http_directory": "boot",
+      "keep_registered": true,
+      "vm_name": "{{user `vmname`}}",
+      "vnc_disable_password": "true",
+      "remote_datastore": "{{user `vsphere_datastore`}}",
+      "output_directory": "{{user `output_directory`}}",
+      "remote_type": "esx5",
+      "remote_username": "{{user `remote_username`}}",
+      "remote_password": "{{user `remote_password`}}",
+      "remote_host": "{{user `remote_host`}}",
+      "vmx_data": {
+        "numvcpus": "{{user `numvcpus`}}",
+        "memsize": "{{user `memsize`}}",
+        "ethernet0.networkName": "{{user `networkName`}}",
+        "paevm": "TRUE"
+      }
+    }
+  ]
+}

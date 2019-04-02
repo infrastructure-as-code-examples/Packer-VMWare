@@ -1,0 +1,4 @@
+packer_cache
+environment
+*.log
+*.txt

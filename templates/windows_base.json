@@ -1,0 +1,85 @@
+{
+  "variables": {
+    "vmname": "{{env `vmname`}}",
+    "numvcpus": "{{env `numvcpus`}}",
+    "memsize": "{{env `memsize`}}",
+    "disk_size": "{{env `disk_size`}}",
+    "iso_url": "{{env `iso_url`}}",
+    "iso_checksum": "{{env `iso_checksum`}}",
+    "iso_checksum_type": "{{env `iso_checksum_type`}}",
+    "ssh_username": "{{env `ssh_username`}}",
+    "ssh_password": "{{env `ssh_password`}}",
+    "remote_host": "{{env `remote_host`}}",
+    "remote_username": "{{env `remote_username`}}",
+    "remote_password": "{{env `remote_password`}}",
+    "networkName": "{{env `networkName`}}",
+    "vsphere_datastore": "{{env `vsphere_datastore`}}",
+    "output_directory": "{{env `output_directory_base`}}/{{env `vmname`}}",
+    "scsi0_virtualDev": "{{env `scsi0_virtualDev`}}",
+    "VMWARE_TOOLS_URL": "{{env `VMWARE_TOOLS_URL`}}"
+  },
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "remote_path": "/tmp/setup.bat",
+      "execute_command": "{{.Vars}} cmd /c C:/Windows/Temp/setup.bat",
+      "script": "scripts/windows/provisioner/setup_all.bat"
+    },
+    {
+      "type": "shell",
+      "remote_path": "/tmp/vmware.bat",
+      "execute_command": "{{.Vars}} cmd /c C:/Windows/Temp/vmware.bat",
+      "script": "scripts/windows/provisioner/setup_vmware.bat",
+      "environment_vars": [
+        "VMWARE_TOOLS_URL={{user `VMWARE_TOOLS_URL`}}"
+      ],
+      "only": ["vmware-iso"]
+    },
+    {
+      "type": "shell",
+      "remote_path": "/tmp/cleanup.bat",
+      "execute_command": "{{.Vars}} cmd /c C:/Windows/Temp/cleanup.bat",
+      "script": "scripts/windows/provisioner/cleanup_all.bat"
+    }
+  ],
+  "builders": [
+    {
+      "type": "vmware-iso",
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_wait_timeout": "6h",
+      "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
+      "boot_wait": "2m",
+      "disk_size": "{{user `disk_size`}}",
+      "guest_os_type": "windows8srv-64",
+      "headless": true,
+      "floppy_files": [
+        "./boot/autounattend.xml",
+        "./scripts/windows/floppy/configure_windows_updates.bat",
+        "./scripts/windows/floppy/install_windows_updates.ps1",
+        "./scripts/windows/floppy/install_openssh.ps1"
+      ],
+      "keep_registered": true,
+      "vm_name": "{{user `vmname`}}",
+      "vnc_disable_password": "true",
+      "remote_datastore": "{{user `vsphere_datastore`}}",
+      "output_directory": "{{user `output_directory`}}",
+      "remote_type": "esx5",
+      "remote_username": "{{user `remote_username`}}",
+      "remote_password": "{{user `remote_password`}}",
+      "remote_host": "{{user `remote_host`}}",
+      "vmx_data": {
+        "numvcpus": "{{user `numvcpus`}}",
+        "memsize": "{{user `memsize`}}",
+        "ethernet0.networkName": "{{user `networkName`}}",
+        "paevm": "TRUE",
+        "scsi0.virtualDev": "lsisas1068"
+      },
+      "tools_upload_flavor": "windows"
+    }
+  ]
+}
